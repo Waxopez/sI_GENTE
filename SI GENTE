@@ -1,0 +1,793 @@
+TODO
+	FUNCIONES JG
+# ------ NO BORRAR -----
+from herramientas import *
+def test () -> None:
+    """
+        Funcion para probar el archivo
+    """
+    import herramientas 
+    menu = herramientas.load_items('XD\P3-24-main\menu.csv')
+    print(menu)
+
+# esto es para que test solo corra si es ejecutado directamente
+if __name__ == '__main__':
+    test()
+# ------ NO BORRAR -----
+
+# Escribir Funciones desde aqui hacia abajo ------------
+
+def ver_menu(menu: list[dict]) -> None:
+    """
+    Imprime el menú cargado.
+    """
+    for item in menu:
+        print(f"Nombre: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}, Ingredientes: {', '.join(item['ingredientes'])}")
+
+def agregar_al_carrito(menu: list[dict], carrito: list[dict], nombre: str) -> None:
+    """
+    Agrega un ítem del menú al carrito por nombre.
+    """
+    for item in menu:
+        if item['nombre'] == nombre:
+            carrito.append(item)
+            print(f"{nombre} ha sido agregado al carrito.")
+            return
+    print(f"Ítem {nombre} no encontrado en el menú.")
+
+def autenticar_usuario() -> bool:
+    """
+    Pide al usuario la contraseña y la verifica.
+    """
+    password = input("Ingrese la contraseña: ")
+    return check_password(password)
+
+def revisar_carrito(carrito: list[dict]) -> None:
+    """
+    Muestra el carrito de comidas seleccionadas.
+    """
+    for item in carrito:
+        print(f"Nombre: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}, Ingredientes: {', '.join(item['ingredientes'])}")
+
+def pagar(carrito: list[dict]) -> None:
+    """
+    Muestra el costo total y cantidad de ítems del carrito, sugiere propina (10%).
+    """
+    total = sum(item['precio'] for item in carrito)
+    propina = total * 0.10
+    print(f"Total: {total}")
+    print(f"Propina sugerida (10%): {propina}")
+    choice = input("Aceptar y pagar (A) o Seguir comprando (S)? ")
+    if choice.lower() == 'a':
+        carrito.clear()
+        print("Pago realizado. Carrito vaciado.")
+    else:
+        print("Sigue comprando.")
+
+def quitar_item_carrito(carrito: list[dict], nombre: str) -> None:
+    """
+    Saca un objeto del carrito.
+    """
+    carrito[:] = [item for item in carrito if item['nombre'] != nombre]
+
+def buscar_item_nombre(carrito: list[dict], nombre: str) -> dict:
+    """
+    Busca un ítem en el carrito según el nombre.
+    """
+    for item in carrito:
+        if item['nombre'] == nombre:
+            return item
+    return None
+
+def buscar_item_ingredientes(carrito: list[dict], ingrediente: str) -> list[dict]:
+    """
+    Busca un ítem en el carrito según los ingredientes del ítem.
+    """
+    return [item for item in carrito if ingrediente in item['ingredientes']]
+
+def filtrar_alergenos(menu: list[dict], alergenos: list[str]) -> list[dict]:
+    """
+    Muestra los ítems que NO tengan ingredientes que causen alergia al usuario.
+    """
+    return [item for item in menu if not any(alergeno in item['ingredientes'] for alergeno in alergenos)]
+
+def buscar_item(menu: list[dict], palabra: str) -> list[dict]:
+    """
+    Busca un ítem que contenga una palabra ingresada por el usuario.
+    """
+    return [item for item in menu if palabra in item['nombre'] or any(palabra in ingrediente for ingrediente in item['ingredientes'])]
+
+def modificar_item_menu(menu: list[dict], nombre: str, nuevos_datos: dict) -> None:
+    """
+    Verifica la contraseña y permite modificar un ítem del menú.
+    """
+    if autenticar_usuario():
+        for item in menu:
+            if item['nombre'] == nombre:
+                item.update(nuevos_datos)
+                break
+
+def agregar_item_menu(menu: list[dict], nuevo_item: dict) -> None:
+    """
+    Verifica la contraseña y permite agregar un ítem al menú.
+    """
+    if autenticar_usuario():
+        menu.append(nuevo_item)
+
+def guardar_carrito(carrito: list[dict], usuario: str) -> None:
+    """
+    Guarda el carrito en un archivo con el nombre del usuario.
+    """
+    with open(f"{usuario}.carrito", 'w') as file:
+        for item in carrito:
+            file.write(f"{item['nombre']};{item['precio']};{item['kcal']};{','.join(item['ingredientes'])}\n")
+
+def cargar_carrito(usuario: str) -> list[dict]:
+    """
+    Carga el carrito del usuario desde un archivo.
+    """
+    carrito = []
+    try:
+        with open(f"{usuario}.carrito", 'r') as file:
+            for line in file:
+                nombre, precio, kcal, ingredientes = line.strip().split(';')
+                carrito.append({
+                    'nombre': nombre,
+                    'precio': int(precio),
+                    'kcal': float(kcal),
+                    'ingredientes': ingredientes.split(',')
+                })
+    except FileNotFoundError:
+        print("No se encontró un carrito para este usuario.")
+    return carrito
+
+def calcular_calorias(carrito: list[dict]) -> float:
+    """
+    Calcula el total de calorías de los ítems del carrito del usuario.
+    """
+    return sum(item['kcal'] for item in carrito)
+
+	MAIN JG
+# ------ NO BORRAR -----
+from funciones import *
+from herramientas import *
+# ------ NO BORRAR -----
+
+user = {}
+menu = load_items('XD\P3-24-main\menu.csv')
+carrito = []
+
+def display_menu():
+    print("1. Ver menú")
+    print("2. Agregar ítem al carrito")
+    print("3. Revisar carrito")
+    print("4. Pagar")
+    print("5. Quitar ítem del carrito")
+    print("6. Buscar ítem en carrito por nombre")
+    print("7. Buscar ítem en carrito por ingredientes")
+    print("8. Filtrar ítems que causen alergia")
+    print("9. Buscar ítem en menú")
+    print("10. Modificar ítem del menú")
+    print("11. Agregar ítem al menú")
+    print("12. Guardar carrito")
+    print("13. Cargar carrito")
+    print("14. Calcular calorías")
+    print("15. Salir")
+
+def main():
+    if not autenticar_usuario():
+        print("Contraseña incorrecta")
+        return
+    
+    while True:
+        display_menu()
+        choice = input("Seleccione una opción: ")
+        
+        if choice == "1":
+            ver_menu(menu)
+        elif choice == "2":
+            nombre = input("Ingrese el nombre del ítem a agregar al carrito: ")
+            agregar_al_carrito(menu, carrito, nombre)
+        elif choice == "3":
+            revisar_carrito(carrito)
+        elif choice == "4":
+            pagar(carrito)
+        elif choice == "5":
+            nombre = input("Ingrese el nombre del ítem a quitar: ")
+            quitar_item_carrito(carrito, nombre)
+        elif choice == "6":
+            nombre = input("Ingrese el nombre del ítem a buscar: ")
+            item = buscar_item_nombre(carrito, nombre)
+            if item:
+                print(f"Ítem encontrado: {item}")
+            else:
+                print("Ítem no encontrado.")
+        elif choice == "7":
+            ingrediente = input("Ingrese el ingrediente a buscar: ")
+            items = buscar_item_ingredientes(carrito, ingrediente)
+            if items:
+                for item in items:
+                    print(f"Ítem encontrado: {item}")
+            else:
+                print("No se encontraron ítems con ese ingrediente.")
+        elif choice == "8":
+            alergenos = input("Ingrese los alergenos separados por comas: ").split(',')
+            items = filtrar_alergenos(menu, alergenos)
+            if items:
+                for item in items:
+                    print(f"Ítem: {item}")
+            else:
+                print("No se encontraron ítems sin esos alergenos.")
+        elif choice == "9":
+            palabra = input("Ingrese la palabra a buscar: ")
+            items = buscar_item(menu, palabra)
+            if items:
+                for item in items:
+                    print(f"Ítem: {item}")
+            else:
+                print("No se encontraron ítems con esa palabra.")
+        elif choice == "10":
+            nombre = input("Ingrese el nombre del ítem a modificar: ")
+            nuevos_datos = {
+                'nombre': input("Nuevo nombre: "),
+                'precio': int(input("Nuevo precio: ")),
+                'kcal': float(input("Nuevas kcal: ")),
+                'ingredientes': input("Nuevos ingredientes (separados por comas): ").split(',')
+            }
+            modificar_item_menu(menu, nombre, nuevos_datos)
+        elif choice == "11":
+            nuevo_item = {
+                'nombre': input("Nombre: "),
+                'precio': int(input("Precio: ")),
+                'kcal': float(input("Kcal: ")),
+                'ingredientes': input("Ingredientes (separados por comas): ").split(',')
+            }
+            agregar_item_menu(menu, nuevo_item)
+        elif choice == "12":
+            usuario = input("Ingrese su nombre de usuario: ")
+            guardar_carrito(carrito, usuario)
+        elif choice == "13":
+            usuario = input("Ingrese su nombre de usuario: ")
+            carrito = cargar_carrito(usuario)
+        elif choice == "14":
+            print(f"Total de calorías: {calcular_calorias(carrito)}")
+        elif choice == "15":
+            print("Saliendo...")
+            break
+        else:
+            print("Opción no válida, por favor intente de nuevo.")
+
+if __name__ == "__main__":
+    main()
+
+	MAIN DL
+# ------ NO BORRAR -----
+from funciones import *
+from herramientas import *
+# ------ NO BORRAR -----
+
+user = {}
+menu = load_items('python\P3-24\menu.csv')
+carrito = []
+
+def display_menu():
+    print("1. Ver menú")
+    print("2. Revisar carrito")
+    print("3. Pagar")
+    print("4. Quitar ítem del carrito")
+    print("5. Buscar ítem en carrito por nombre")
+    print("6. Buscar ítem en carrito por ingredientes")
+    print("7. Filtrar ítems que causen alergia")
+    print("8. Buscar ítem en menú")
+    print("9. Modificar ítem del menú")
+    print("10. Agregar ítem al menú")
+    print("11. Guardar carrito")
+    print("12. Cargar carrito")
+    print("13. Calcular calorías")
+    print("14. Salir")
+
+def main():
+    if not autenticar_usuario():
+        print("Contraseña incorrecta")
+        return
+    
+    while True:
+        display_menu()
+        choice = input("Seleccione una opción: ")
+        
+        if choice == "1":
+            ver_menu(menu)
+        elif choice == "2":
+            revisar_carrito(carrito)
+        elif choice == "3":
+            pagar(carrito)
+        elif choice == "4":
+            nombre = input("Ingrese el nombre del ítem a quitar: ")
+            quitar_item_carrito(carrito, nombre)
+        elif choice == "5":
+            nombre = input("Ingrese el nombre del ítem a buscar: ")
+            item = buscar_item_nombre(carrito, nombre)
+            if item:
+                print(f"Ítem encontrado: {item}")
+            else:
+                print("Ítem no encontrado.")
+        elif choice == "6":
+            ingrediente = input("Ingrese el ingrediente a buscar: ")
+            items = buscar_item_ingredientes(carrito, ingrediente)
+            if items:
+                for item in items:
+                    print(f"Ítem encontrado: {item}")
+            else:
+                print("No se encontraron ítems con ese ingrediente.")
+        elif choice == "7":
+            alergenos = input("Ingrese los alergenos separados por comas: ").split(',')
+            items = filtrar_alergenos(menu, alergenos)
+            if items:
+                for item in items:
+                    print(f"Ítem: {item}")
+            else:
+                print("No se encontraron ítems sin esos alergenos.")
+        elif choice == "8":
+            palabra = input("Ingrese la palabra a buscar: ")
+            items = buscar_item(menu, palabra)
+            if items:
+                for item in items:
+                    print(f"Ítem: {item}")
+            else:
+                print("No se encontraron ítems con esa palabra.")
+        elif choice == "9":
+            nombre = input("Ingrese el nombre del ítem a modificar: ")
+            nuevos_datos = {
+                'nombre': input("Nuevo nombre: "),
+                'precio': int(input("Nuevo precio: ")),
+                'kcal': float(input("Nuevas kcal: ")),
+                'ingredientes': input("Nuevos ingredientes (separados por comas): ").split(',')
+            }
+            modificar_item_menu(menu, nombre, nuevos_datos)
+        elif choice == "10":
+            nuevo_item = {
+                'nombre': input("Nombre: "),
+                'precio': int(input("Precio: ")),
+                'kcal': float(input("Kcal: ")),
+                'ingredientes': input("Ingredientes (separados por comas): ").split(',')
+            }
+            agregar_item_menu(menu, nuevo_item)
+        elif choice == "11":
+            usuario = input("Ingrese su nombre de usuario: ")
+            guardar_carrito(carrito, usuario)
+        elif choice == "12":
+            usuario = input("Ingrese su nombre de usuario: ")
+            carrito = cargar_carrito(usuario)
+        elif choice == "13":
+            print(f"Total de calorías: {calcular_calorias(carrito)}")
+        elif choice == "14":
+            print("Saliendo...")
+            break
+        else:
+            print("Opción no válida, por favor intente de nuevo.")
+
+if __name__ == "__main__":
+    main()
+
+	FUNCIONES DL
+
+from herramientas import *
+"""
+Puede escribir aqui las funciones del codigo
+Se importaran de forma automatica al 'main.py'
+"""
+# ------ NO BORRAR -----
+def test () -> None:
+    """
+        Funcion para probar el archivo
+    """
+    import herramientas
+    menu = herramientas.load_items('python\P3-24\menu.csv')
+    print(menu)
+
+# esto es para que test solo corra si es ejecutado directamente
+if __name__ == '__main__':
+    test()
+# ------ NO BORRAR -----
+
+#Escribir Funciones desde aqui hacia abajo ------------
+def ver_menu(menu: list[dict]) -> None:
+    """
+    Imprime el menú cargado.
+    """
+    for item in menu:
+        print(f"Nombre: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}, Ingredientes: {', '.join(item['ingredientes'])}")
+
+def autenticar_usuario() -> bool:
+    """
+    Pide al usuario la contraseña y la verifica.
+    """
+    password = input("Ingrese la contraseña: ")
+    return check_password(password)
+
+def revisar_carrito(carrito: list[dict]) -> None:
+    """
+    Muestra el carrito de comidas seleccionadas.
+    """
+    for item in carrito:
+        print(f"Nombre: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}, Ingredientes: {', '.join(item['ingredientes'])}")
+
+def pagar(carrito: list[dict]) -> None:
+    """
+    Muestra el costo total y cantidad de ítems del carrito, sugiere propina (10%).
+    """
+    total = sum(item['precio'] for item in carrito)
+    propina = total * 0.10
+    print(f"Total: {total}")
+    print(f"Propina sugerida (10%): {propina}")
+    choice = input("Aceptar y pagar (A) o Seguir comprando (S)? ")
+    if choice.lower() == 'a':
+        carrito.clear()
+        print("Pago realizado. Carrito vaciado.")
+    else:
+        print("Sigue comprando.")
+
+def quitar_item_carrito(carrito: list[dict], nombre: str) -> None:
+    """
+    Saca un objeto del carrito.
+    """
+    carrito[:] = [item for item in carrito if item['nombre'] != nombre]
+
+def buscar_item_nombre(carrito: list[dict], nombre: str) -> dict:
+    """
+    Busca un ítem en el carrito según el nombre.
+    """
+    for item in carrito:
+        if item['nombre'] == nombre:
+            return item
+    return None
+
+def buscar_item_ingredientes(carrito: list[dict], ingrediente: str) -> list[dict]:
+    """
+    Busca un ítem en el carrito según los ingredientes del ítem.
+    """
+    return [item for item in carrito if ingrediente in item['ingredientes']]
+
+def filtrar_alergenos(menu: list[dict], alergenos: list[str]) -> list[dict]:
+    """
+    Muestra los ítems que NO tengan ingredientes que causen alergia al usuario.
+    """
+    return [item for item in menu if not any(alergeno in item['ingredientes'] for alergeno in alergenos)]
+
+def buscar_item(menu: list[dict], palabra: str) -> list[dict]:
+    """
+    Busca un ítem que contenga una palabra ingresada por el usuario.
+    """
+    return [item for item in menu if palabra in item['nombre'] or any(palabra in ingrediente for ingrediente in item['ingredientes'])]
+
+def modificar_item_menu(menu: list[dict], nombre: str, nuevos_datos: dict) -> None:
+    """
+    Verifica la contraseña y permite modificar un ítem del menú.
+    """
+    if autenticar_usuario():
+        for item in menu:
+            if item['nombre'] == nombre:
+                item.update(nuevos_datos)
+                break
+
+def agregar_item_menu(menu: list[dict], nuevo_item: dict) -> None:
+    """
+    Verifica la contraseña y permite agregar un ítem al menú.
+    """
+    if autenticar_usuario():
+        menu.append(nuevo_item)
+
+def guardar_carrito(carrito: list[dict], usuario: str) -> None:
+    """
+    Guarda el carrito en un archivo con el nombre del usuario.
+    """
+    with open(f"{usuario}.carrito", 'w') as file:
+        for item in carrito:
+            file.write(f"{item['nombre']};{item['precio']};{item['kcal']};{','.join(item['ingredientes'])}\n")
+
+def cargar_carrito(usuario: str) -> list[dict]:
+    """
+    Carga el carrito del usuario desde un archivo.
+    """
+    carrito = []
+    try:
+        with open(f"{usuario}.carrito", 'r') as file:
+            for line in file:
+                nombre, precio, kcal, ingredientes = line.strip().split(';')
+                carrito.append({
+                    'nombre': nombre,
+                    'precio': int(precio),
+                    'kcal': float(kcal),
+                    'ingredientes': ingredientes.split(',')
+                })
+    except FileNotFoundError:
+        print("No se encontró un carrito para este usuario.")
+    return carrito
+
+def calcular_calorias(carrito: list[dict]) -> float:
+    """
+    Calcula el total de calorías de los ítems del carrito del usuario.
+    """
+    return sum(item['kcal'] for item in carrito)
+
+    ...
+
+	SOLUCION COMPLETA EN 1 SOLO ARCHIVO - GPT
+
+# Datos iniciales del menú
+menu = [
+    {"nombre": "papas fritas", "precio": 2000, "kcal": 2000, "ingredientes": ["papas", "aceite"]},
+    {"nombre": "completo", "precio": 2500, "kcal": 3000, "ingredientes": ["vienesa", "pan", "palta", "tomate"]},
+    {"nombre": "churrasco chacarero", "precio": 2700, "kcal": 3260, "ingredientes": ["carne", "pan", "palta", "porotos verdes"]}
+]
+
+carrito = []
+
+# Funciones
+def revisar_menu():
+    print("\nMenú:")
+    for item in menu:
+        print(f"Nombre: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}, Ingredientes: {', '.join(item['ingredientes'])}")
+    agregar_al_carrito()
+
+def agregar_al_carrito():
+    nombre_item = input("\nIngrese el nombre del ítem para agregar al carrito: ")
+    for item in menu:
+        if item["nombre"] == nombre_item:
+            carrito.append(item)
+            print(f"{nombre_item} ha sido agregado al carrito.")
+            return
+    print("Ítem no encontrado en el menú.")
+
+def revisar_carrito():
+    if not carrito:
+        print("\nEl carrito está vacío.")
+        return
+    print("\nCarrito:")
+    for item in carrito:
+        print(f"Nombre: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}")
+    quitar_item_carrito()
+
+def quitar_item_carrito():
+    nombre_item = input("\nIngrese el nombre del ítem para quitar del carrito: ")
+    for item in carrito:
+        if item["nombre"] == nombre_item:
+            carrito.remove(item)
+            print(f"{nombre_item} ha sido removido del carrito.")
+            return
+    print("Ítem no encontrado en el carrito.")
+
+def pagar():
+    if not carrito:
+        print("\nEl carrito está vacío.")
+        return
+    total = sum(item['precio'] for item in carrito)
+    propina = total * 0.10
+    print(f"\nTotal a pagar: {total}")
+    print(f"Sugerencia de propina (10%): {propina}")
+    decision = input("¿Desea aceptar y pagar (si/no)?: ")
+    if decision.lower() == "si":
+        carrito.clear()
+        print("Pago realizado. Carrito vaciado.")
+    else:
+        print("Continúe comprando.")
+
+def buscar_item_nombre():
+    nombre_item = input("\nIngrese el nombre del ítem a buscar: ")
+    for item in carrito:
+        if nombre_item in item["nombre"]:
+            print(f"Encontrado en el carrito: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}, Ingredientes: {', '.join(item['ingredientes'])}")
+            return
+    print("Ítem no encontrado en el carrito.")
+
+def buscar_item_ingredientes():
+    ingredientes = input("\nIngrese los ingredientes a buscar (separados por comas): ").split(",")
+    for item in carrito:
+        if all(ingrediente in item["ingredientes"] for ingrediente in ingredientes):
+            print(f"Encontrado en el carrito: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}, Ingredientes: {', '.join(item['ingredientes'])}")
+            return
+    print("Ítem no encontrado en el carrito.")
+
+def filtrar_items_alergia():
+    for item in menu:
+        if not any(alergia in item["ingredientes"] for alergia in usuario["alergias"]):
+            print(f"Nombre: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}, Ingredientes: {', '.join(item['ingredientes'])}")
+
+def buscar_item():
+    palabra = input("\nIngrese la palabra a buscar en el menú: ")
+    for item in menu:
+        if palabra in item["nombre"] or any(palabra in ingrediente for ingrediente in item["ingredientes"]):
+            print(f"Encontrado en el menú: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}, Ingredientes: {', '.join(item['ingredientes'])}")
+            return
+    print("Ítem no encontrado en el menú.")
+
+def modificar_item_menu():
+    with open("password.psw", "r") as file:
+        password = file.read().strip()
+    contrasena = input("\nIngrese la contraseña: ")
+    if contrasena != password:
+        print("Contraseña incorrecta.")
+        return
+    nombre_item = input("Ingrese el nombre del ítem a modificar: ")
+    for item in menu:
+        if item["nombre"] == nombre_item:
+            item["nombre"] = input("Nuevo nombre: ")
+            item["precio"] = int(input("Nuevo precio: "))
+            item["kcal"] = float(input("Nuevas kcal: "))
+            item["ingredientes"] = input("Nuevos ingredientes (separados por comas): ").split(",")
+            print(f"Ítem {nombre_item} ha sido modificado.")
+            return
+    print("Ítem no encontrado en el menú.")
+
+def agregar_item_menu():
+    with open("password.psw", "r") as file:
+        password = file.read().strip()
+    contrasena = input("\nIngrese la contraseña: ")
+    if contrasena != password:
+        print("Contraseña incorrecta.")
+        return
+    nuevo_item = {
+        "nombre": input("Nombre: "),
+        "precio": int(input("Precio: ")),
+        "kcal": float(input("Kcal: ")),
+        "ingredientes": input("Ingredientes (separados por comas): ").split(",")
+    }
+    menu.append(nuevo_item)
+    print(f"Ítem {nuevo_item['nombre']} ha sido agregado al menú.")
+
+def guardar_carrito():
+    with open(f"{usuario['nombre']}.carrito", "w") as file:
+        for item in carrito:
+            file.write(f"{item['nombre']};{item['precio']};{item['kcal']};{','.join(item['ingredientes'])}\n")
+    print("Carrito guardado.")
+
+def cargar_carrito():
+    try:
+        with open(f"{usuario['nombre']}.carrito", "r") as file:
+            for line in file:
+                nombre, precio, kcal, ingredientes = line.strip().split(";")
+                carrito.append({
+                    "nombre": nombre,
+                    "precio": int(precio),
+                    "kcal": float(kcal),
+                    "ingredientes": ingredientes.split(",")
+                })
+        print("Carrito cargado.")
+    except FileNotFoundError:
+        print("No existe un carrito guardado para este usuario.")
+
+def calcular_calorias():
+    total_kcal = sum(item['kcal'] for item in carrito)
+    print(f"\nTotal de calorías en el carrito: {total_kcal}")
+
+# Datos del usuario
+usuario = {
+    "nombre": input("Ingrese su nombre: "),
+    "comida_favorita": input("Ingrese su comida favorita: "),
+    "alergias": input("Ingrese sus alergias (separadas por comas): ").split(",")
+}
+
+# Cargar carrito si existe
+cargar_carrito()
+
+# Menú principal
+while True:
+    print("\n1. Revisar Menú")
+    print("2. Revisar Carrito")
+    print("3. Pagar")
+    print("4. Buscar ítem en carrito por nombre")
+    print("5. Buscar ítem en carrito por ingredientes")
+    print("6. Filtrar ítems que den alergia")
+    print("7. Buscar ítem")
+    print("8. Modificar ítem del menú")
+    print("9. Agregar ítem al menú")
+    print("10. Guardar Carrito")
+    print("11. Cargar Carrito")
+    print("12. Calcular Calorías")
+    print("13. Salir")
+    
+    opcion = input("Seleccione una opción: ")
+    
+    if opcion == "1":
+        revisar_menu()
+    elif opcion == "2":
+        revisar_carrito()
+    elif opcion == "3":
+        pagar()
+    elif opcion == "4":
+        buscar_item_nombre()
+    elif opcion == "5":
+        buscar_item_ingredientes()
+    elif opcion == "6":
+        filtrar_items_alergia()
+    elif opcion == "7":
+        buscar_item()
+    elif opcion == "8":
+        modificar_item_menu()
+    elif opcion == "9":
+        agregar_item_menu()
+    elif opcion == "10":
+        guardar_carrito()
+    elif opcion == "11":
+        cargar_carrito()
+    elif opcion == "12":
+        calcular_calorias()
+    elif opcion == "13":
+        break
+    else:
+        print("Opción no válida. Intente de nuevo.")
+
+	SOLUCION SOLO MENU, CARRITO Y PAGAR
+
+#listas
+menu = [
+    {"nombre": "papas fritas", "precio": 2000, "kcal": 2000, "ingredientes": ["papas", "aceite"]},
+    {"nombre": "completo", "precio": 2500, "kcal": 3000, "ingredientes": ["vienesa", "pan", "palta", "tomate"]},
+    {"nombre": "churrasco chacarero", "precio": 2700, "kcal": 3260, "ingredientes": ["carne", "pan", "palta", "porotos verdes"]}
+]
+carrito = []
+
+#funciones
+
+    #revisar menú
+def revisar_menu():
+    print("\nMenú:")
+    for item in menu:
+        print(f"Nombre: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}, Ingredientes: {', '.join(item['ingredientes'])}")
+    agregar_al_carrito()
+
+    #agregar al carrito
+def agregar_al_carrito():
+    nombre_item = input("\nIngrese el nombre del ítem para agregar al carrito: ")
+    for item in menu:
+        if item["nombre"] == nombre_item:
+            carrito.append(item)
+            print(f"{nombre_item} ha sido agregado al carrito.")
+            return
+    print("Ítem no encontrado en el menú.")
+
+    #revisar carrito
+def revisar_carrito():
+    if not carrito:
+        print("\nEl carrito está vacío.")
+        return
+    print("\nCarrito:")
+    for item in carrito:
+        print(f"Nombre: {item['nombre']}, Precio: {item['precio']}, Kcal: {item['kcal']}")
+
+    #pagar
+def pagar():
+    if not carrito:
+        print("\nEl carrito está vacío.")
+        return
+    total = sum(item['precio'] for item in carrito)
+    propina = total * 0.1
+    print(f"\nTotal a pagar: {total}")
+    print(f"Sugerencia de propina (10%): {propina}")
+    decision = input("¿Desea aceptar y pagar (si/no)?: ")
+    if decision.lower() == "si":
+        carrito.clear()
+        print("Pago realizado. Carrito vaciado.")
+    else:
+        print("Continúe comprando.")
+
+#menú
+while True:
+    print("\nMenú Principal")
+    print("1. Revisar Menú")
+    print("2. Revisar Carrito")
+    print("3. Pagar")
+    print("0. Salir")
+
+    opcion = input("Seleccione una opción: ")
+    if opcion == "1":
+        revisar_menu()
+    elif opcion == "2":
+        revisar_carrito()
+    elif opcion == "3":
+        pagar()
+    elif opcion == "0":
+        print("Gracias por usar el programa.")
+        break
+    else:
+        print("Opción no válida.")
